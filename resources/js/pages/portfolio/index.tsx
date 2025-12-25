@@ -1,9 +1,10 @@
 import { Head, Link } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Icon } from '@/components/ui/icon';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 interface Project {
     id: number;
@@ -48,6 +49,31 @@ interface Props {
 
 export default function PortfolioIndex({ profile, featuredProjects, projects, skillsByCategory }: Props) {
     const [showAllProjects, setShowAllProjects] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [scrolled, setScrolled] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setScrolled(window.scrollY > 20);
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    const scrollToSection = (sectionId: string) => {
+        const element = document.getElementById(sectionId);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setMobileMenuOpen(false);
+        }
+    };
+
+    const navLinks = [
+        { label: 'About', href: 'about' },
+        { label: 'Projects', href: 'projects' },
+        { label: 'Skills', href: 'skills' },
+        { label: 'Contact', href: 'contact' },
+    ];
 
     return (
         <>
@@ -55,45 +81,157 @@ export default function PortfolioIndex({ profile, featuredProjects, projects, sk
             
             <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
                 {/* Navigation */}
-                <nav className="fixed top-0 w-full z-50 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
-                    <div className="container mx-auto px-6 py-4">
-                        <div className="flex items-center justify-between">
-                            <div className="text-xl font-bold text-slate-900 dark:text-white">
-                                {profile.full_name}
+                <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${
+                    scrolled 
+                        ? 'bg-white/95 dark:bg-slate-950/95 backdrop-blur-lg shadow-lg' 
+                        : 'bg-white/80 dark:bg-slate-950/80 backdrop-blur-md'
+                } border-b border-slate-200 dark:border-slate-800`}>
+                    <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="flex items-center justify-between h-16">
+                            {/* Logo/Name */}
+                            <button
+                                onClick={() => scrollToSection('about')}
+                                className="flex items-center gap-2 group"
+                            >
+                                <div className="relative">
+                                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg blur opacity-25 group-hover:opacity-40 transition"></div>
+                                    <div className="relative bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold text-lg px-3 py-1.5 rounded-lg">
+                                        {profile.full_name.split(' ').map(name => name[0]).join('')}
+                                    </div>
+                                </div>
+                                <span className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent hidden sm:block">
+                                    {profile.full_name}
+                                </span>
+                            </button>
+
+                            {/* Desktop Navigation */}
+                            <div className="hidden md:flex items-center gap-8">
+                                {navLinks.map((link) => (
+                                    <button
+                                        key={link.href}
+                                        onClick={() => scrollToSection(link.href)}
+                                        className="relative text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white font-medium transition-colors group"
+                                    >
+                                        {link.label}
+                                        <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-600 to-purple-600 group-hover:w-full transition-all duration-300"></span>
+                                    </button>
+                                ))}
                             </div>
-                            <div className="hidden md:flex items-center gap-6">
-                                <a href="#about" className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition">
-                                    About
-                                </a>
-                                <a href="#projects" className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition">
-                                    Projects
-                                </a>
-                                <a href="#skills" className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition">
-                                    Skills
-                                </a>
-                                <a href="#contact" className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition">
-                                    Contact
-                                </a>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                {profile.github_url && (
-                                    <a href={profile.github_url} target="_blank" rel="noopener noreferrer" 
-                                       className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">
-                                        <Icon name="github" className="h-5 w-5" />
-                                    </a>
-                                )}
-                                {profile.linkedin_url && (
-                                    <a href={profile.linkedin_url} target="_blank" rel="noopener noreferrer"
-                                       className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">
-                                        <Icon name="linkedin" className="h-5 w-5" />
-                                    </a>
-                                )}
-                                {profile.twitter_url && (
-                                    <a href={profile.twitter_url} target="_blank" rel="noopener noreferrer"
-                                       className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">
-                                        <Icon name="twitter" className="h-5 w-5" />
-                                    </a>
-                                )}
+
+                            {/* Social Links & Mobile Menu */}
+                            <div className="flex items-center gap-3">
+                                {/* Social Icons - Desktop */}
+                                <div className="hidden sm:flex items-center gap-3">
+                                    {profile.github_url && (
+                                        <a 
+                                            href={profile.github_url} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer" 
+                                            className="p-2 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all"
+                                        >
+                                            <Icon name="github" className="h-5 w-5" />
+                                        </a>
+                                    )}
+                                    {profile.linkedin_url && (
+                                        <a 
+                                            href={profile.linkedin_url} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="p-2 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all"
+                                        >
+                                            <Icon name="linkedin" className="h-5 w-5" />
+                                        </a>
+                                    )}
+                                    {profile.twitter_url && (
+                                        <a 
+                                            href={profile.twitter_url} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="p-2 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all"
+                                        >
+                                            <Icon name="twitter" className="h-5 w-5" />
+                                        </a>
+                                    )}
+                                </div>
+
+                                {/* Mobile Menu Button */}
+                                <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                                    <SheetTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="md:hidden"
+                                        >
+                                            <Icon name={mobileMenuOpen ? "x" : "menu"} className="h-6 w-6" />
+                                        </Button>
+                                    </SheetTrigger>
+                                    <SheetContent side="right" className="w-full sm:w-80">
+                                        <div className="flex flex-col gap-6 mt-8">
+                                            {/* Mobile Navigation Links */}
+                                            <div className="flex flex-col gap-2">
+                                                {navLinks.map((link) => (
+                                                    <button
+                                                        key={link.href}
+                                                        onClick={() => scrollToSection(link.href)}
+                                                        className="flex items-center gap-3 p-4 text-left text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all group"
+                                                    >
+                                                        <span className="text-lg font-medium">{link.label}</span>
+                                                        <Icon name="arrow-right" className="h-4 w-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                                                    </button>
+                                                ))}
+                                            </div>
+
+                                            {/* Mobile Social Links */}
+                                            <div className="border-t border-slate-200 dark:border-slate-800 pt-6">
+                                                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-4">Connect with me</p>
+                                                <div className="flex gap-3">
+                                                    {profile.github_url && (
+                                                        <a 
+                                                            href={profile.github_url} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer"
+                                                            className="flex-1 flex items-center justify-center gap-2 p-3 text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-all"
+                                                        >
+                                                            <Icon name="github" className="h-5 w-5" />
+                                                        </a>
+                                                    )}
+                                                    {profile.linkedin_url && (
+                                                        <a 
+                                                            href={profile.linkedin_url} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer"
+                                                            className="flex-1 flex items-center justify-center gap-2 p-3 text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-all"
+                                                        >
+                                                            <Icon name="linkedin" className="h-5 w-5" />
+                                                        </a>
+                                                    )}
+                                                    {profile.twitter_url && (
+                                                        <a 
+                                                            href={profile.twitter_url} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer"
+                                                            className="flex-1 flex items-center justify-center gap-2 p-3 text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-all"
+                                                        >
+                                                            <Icon name="twitter" className="h-5 w-5" />
+                                                        </a>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Mobile CTA */}
+                                            {profile.resume_url && (
+                                                <div className="border-t border-slate-200 dark:border-slate-800 pt-6">
+                                                    <Button className="w-full" asChild>
+                                                        <a href={profile.resume_url} target="_blank" rel="noopener noreferrer">
+                                                            <Icon name="download" className="mr-2 h-4 w-4" />
+                                                            Download Resume
+                                                        </a>
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </SheetContent>
+                                </Sheet>
                             </div>
                         </div>
                     </div>
